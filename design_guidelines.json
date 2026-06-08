@@ -1,0 +1,91 @@
+{
+  "theme": "dark",
+  "archetype": "Premium Playful Satire (Archetype 6 + 5)",
+  "colors": {
+    "background_primary": "#0D1B2A",
+    "background_card": "#FFF8F0",
+    "background_accent": "#FF4D4D",
+    "text_on_dark": "#FFF8F0",
+    "text_on_light": "#0D1B2A",
+    "accent_red": "#FF4D4D",
+    "accent_gold": "#FFD700",
+    "border_subtle": "rgba(255, 248, 240, 0.15)",
+    "shadow_card": "0 8px 30px rgba(0, 0, 0, 0.4)"
+  },
+  "typography": {
+    "heading_font": "Nunito",
+    "body_font": "DM Sans",
+    "scale": {
+      "h1": "text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter",
+      "h2": "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-bold",
+      "body": "text-base font-medium leading-relaxed",
+      "quote": "text-2xl italic font-semibold leading-snug"
+    }
+  },
+  "layout_strategy": {
+    "global": "Generous spacing. Dark mode foundation with bright saturated accents. Immersive depth.",
+    "hero_section": "Massive typography, centered layout, 'Know Before You Go.' headline, prominent search bar, confetti-like 🚩 scattered.",
+    "directory_grid": "Bento-style asymmetric grid or masonry feel. Wide gaps (gap-8 to gap-12). Infinite scroll setup.",
+    "admin_dashboard": "Dense 'Control Room' mode. Tight gaps (gap-6), functional density. Solid dark background, minimal card borders."
+  },
+  "components": {
+    "red_flag_card": {
+      "background": "#FFF8F0",
+      "text_color": "#0D1B2A",
+      "border": "border-l-4 border-[#FF4D4D]",
+      "shadow": "shadow-lg hover:shadow-2xl",
+      "border_radius": "rounded-2xl",
+      "inner_spacing": "p-8",
+      "interaction": "hover:-translate-y-2 transition-transform duration-300 ease-out",
+      "details": "Include company logo, person name+title. Large italic quote with stylized oversized quotation marks. Sources as labeled link buttons. 1-5 🚩 score."
+    },
+    "buttons": {
+      "primary": "bg-[#FF4D4D] text-[#FFF8F0] rounded-full px-6 py-3 font-bold hover:bg-[#e03a3a] transition-colors",
+      "secondary": "border-2 border-[#FFF8F0] text-[#FFF8F0] rounded-full px-6 py-3 font-bold hover:bg-[#FFF8F0] hover:text-[#0D1B2A] transition-colors"
+    },
+    "search_bar": {
+      "style": "bg-white/10 backdrop-blur-xl border border-white/20 text-[#FFF8F0] rounded-full px-8 py-4 text-lg w-full max-w-2xl shadow-[0_0_20px_rgba(255,77,77,0.2)] focus:outline-none focus:ring-2 focus:ring-[#FF4D4D]"
+    },
+    "navigation": {
+      "style": "sticky top-0 z-50 bg-[#0D1B2A]/80 backdrop-blur-xl border-b border-[#FFF8F0]/10 px-8 py-4 flex justify-between items-center"
+    }
+  },
+  "animations": {
+    "page_transition": "framer-motion opacity and slight y-axis translation",
+    "logo": "waving flag animation on the 🚩 emoji next to text logo",
+    "hero_confetti": "subtle floating animation for scattered 🚩 emojis in background",
+    "hover_states": "lift and scale on cards (translate-y-1, scale-102)"
+  },
+  "assets": {
+    "motif": "🚩",
+    "logo_text": "<span className=\"text-[#FFF8F0]\">dont</span><span className=\"text-[#FF4D4D]\">workhere</span>",
+    "mock_images": {
+      "company_logos": [
+        "https://images.unsplash.com/photo-1761044591996-7a05341a3e12?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MjJ8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMG1vZGVybiUyMGNvbXBhbnklMjBsb2dvfGVufDB8fHx8MTc4MDk1MDg2OHww&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1633796212691-0cfba2ab1dab?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MjJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1vZGVybiUyMGNvbXBhbnklMjBsb2dvfGVufDB8fHx8MTc4MDk1MDg2OHww&ixlib=rb-4.1.0&q=85",
+        "https://images.pexels.com/photos/21898300/pexels-photo-21898300.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+      ],
+      "boss_headshots": [
+        "https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBib3NzJTIwaGVhZHNob3QlMjBwb3J0cmFpdHxlbnwwfHx8fDE3ODA5NTA4Njh8MA&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1685375421073-4dae366f8e84?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHw0fHxjb3Jwb3JhdGUlMjBib3NzJTIwaGVhZHNob3QlMjBwb3J0cmFpdHxlbnwwfHx8fDE3ODA5NTA4Njh8MA&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1600878459138-e1123b37cb30?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxjb3Jwb3JhdGUlMjBib3NzJTIwaGVhZHNob3QlMjBwb3J0cmFpdHxlbnwwfHx8fDE3ODA5NTA4Njh8MA&ixlib=rb-4.1.0&q=85"
+      ]
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly adhere to the color palette. Background must be #0D1B2A, cards must be #FFF8F0. Do NOT use #FFF8F0 as the main page background.",
+    "Since the card background is #FFF8F0 (Cream), ensure all text inside the cards is #0D1B2A (Navy) to maintain a high contrast ratio. Do not use white text on cream cards.",
+    "Do NOT use pure Inter for headings. Use Nunito Extrabold.",
+    "Add 'data-testid' to ALL interactive elements, buttons, links, form inputs, and key UI markers like balances or status tags.",
+    "Use Framer Motion to scatter 🚩 emojis in the hero background and give them a slow, subtle floating animation.",
+    "Admin dashboard must be dense and cardless or have subtle borders for widgets, maximizing data density.",
+    "Build the submission form dynamically using Shadcn components (Form, Input, Button) but style them to match the playful dark mode theme (Navy background, coral borders on focus).",
+    "Never use placeholder URLs (via.placeholder.com). Use the provided asset URLs for mocked data.",
+    "Implement 'infinite scroll' logic for the red flag directory.",
+    "Ensure the hero header reads 'Know Before You Go.' accurately, stylized large and imposing, yet playful.",
+    "Use lucide-react for standard icons, but prominently feature the 🚩 emoji for branding.",
+    "Moderator login must be a clean, minimal layout focused on Google Social Login.",
+    "Remember to write React code in .js / .jsx files as TypeScript is not used for this setup."
+  ]
+}
