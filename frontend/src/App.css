@@ -1,34 +1,67 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
-}
+/* dontworkhere.xyz — Pixar meets Corporate Satire */
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #0f0f10;
+.App {
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    background-color: #0D1B2A;
 }
 
-.App-link {
-    color: #61dafb;
+/* Waving flag animation for the logo */
+@keyframes flag-wave {
+    0%, 100% { transform: rotate(-8deg); }
+    50% { transform: rotate(8deg); }
+}
+.flag-wave {
+    display: inline-block;
+    transform-origin: bottom left;
+    animation: flag-wave 1.8s ease-in-out infinite;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Floating confetti flags in hero */
+@keyframes float-flag {
+    0% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+    50% { transform: translateY(-22px) rotate(calc(var(--rot, 0deg) + 6deg)); }
+    100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+}
+.confetti-flag {
+    position: absolute;
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.16;
+    animation: float-flag var(--dur, 7s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    filter: saturate(1.2);
+}
+
+/* Entrance reveal */
+@keyframes rise-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.rise-in {
+    animation: rise-in 0.6s ease-out both;
+}
+
+/* Big quotation mark */
+.quote-mark {
+    font-family: 'Nunito', serif;
+    font-weight: 900;
+    line-height: 0;
+}
+
+/* radial glow background utility */
+.hero-glow {
+    background:
+        radial-gradient(circle at 50% 0%, rgba(255, 77, 77, 0.18), transparent 55%),
+        radial-gradient(circle at 80% 60%, rgba(255, 215, 0, 0.08), transparent 50%);
+}
+
+/* shimmer for loading skeletons */
+@keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+.shimmer {
+    background: linear-gradient(90deg, rgba(255,248,240,0.05) 25%, rgba(255,248,240,0.12) 50%, rgba(255,248,240,0.05) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
