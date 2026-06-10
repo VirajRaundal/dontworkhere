@@ -16,13 +16,22 @@ DB_NAME = os.environ.get("DB_NAME", "dontworkhere")
 # frontend origin(s) — browsers reject "*" together with credentialed (cookie) requests.
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
 
-EMERGENT_SESSION_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
 SESSION_DAYS = 7
 
-# Public URL of the frontend — used for sitemap entries and share links.
-# Falls back to the first concrete CORS origin, then localhost.
+# Public URL of the app — used for sitemap entries, share links, and the OAuth
+# redirect URI. Falls back to the first concrete CORS origin, then localhost.
 _first_origin = next((o for o in CORS_ORIGINS if o and o != "*"), "http://localhost:3000")
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", _first_origin).rstrip("/")
+
+# --- Google OAuth (moderator sign-in) ---
+# Create an OAuth 2.0 Client (type: Web application) in Google Cloud Console and
+# register the redirect URI: {PUBLIC_BASE_URL}/api/auth/google/callback
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+# Session cookie security. Keep true in production (HTTPS). Set COOKIE_SECURE=false
+# only for local http testing (then the cookie uses SameSite=Lax instead of None).
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "true").lower() != "false"
 
 # --- Email notifications (all optional) ---
 # If neither key is set, decision emails are logged and skipped (no-op) so the

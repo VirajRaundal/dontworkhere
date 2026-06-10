@@ -7,7 +7,7 @@ submit; moderators approve/reject before entries go public. Design: "Pixar meets
 Satire" — navy (#0D1B2A) / coral (#FF4D4D) / cream (#FFF8F0) / gold (#FFD700), 🚩 motif.
 
 ## User Choices (locked)
-- Auth: Emergent-managed Google OAuth (moderator-only). First login = founding moderator (bootstrap).
+- Auth: self-owned Google OAuth (moderator-only), server-side Authorization Code flow. First login = founding moderator (bootstrap).
 - Seed ~8 fictional/satirical sample entries.
 - Mods can invite/remove other mods from the dashboard.
 - Homepage browsing: infinite scroll.

@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { API } from "@/lib/api";
 
 export default function ModLogin() {
   const { user, loading } = useAuth();
@@ -13,10 +15,17 @@ export default function ModLogin() {
     if (!loading && user) navigate("/mod/dashboard", { replace: true });
   }, [user, loading, navigate]);
 
+  // Surface the "not an authorized moderator" bounce from the OAuth callback.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "unauthorized") {
+      toast.error("That Google account isn't an authorized moderator.");
+      window.history.replaceState(null, "", "/mod/login");
+    }
+  }, []);
+
   const handleLogin = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + "/mod/dashboard";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    // Kicks off the server-side Google OAuth flow (same-origin /api/auth/google/login).
+    window.location.href = `${API}/auth/google/login`;
   };
 
   return (

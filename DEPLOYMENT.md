@@ -11,19 +11,15 @@ Everything runs on **one Vercel project**:
         └─ MongoDB Atlas (managed, free M0 tier)
 ```
 
-Frontend and API share one origin, so the moderator session cookie is first-party (no CORS,
-no third-party-cookie issues). The Google OAuth is portable — it redirects back to whatever
-origin you're served from.
+Frontend and API share one origin, so the moderator session cookie is first-party.
+Moderator sign-in uses **your own Google OAuth** (no third-party auth broker).
 
 ## Already configured in the repo
 
 - `vercel.json` — builds the frontend, exposes `api/index.py` as a function, routes `/api/*`
   + `/sitemap.xml` to it, and falls back all other routes to the SPA `index.html`.
-- `api/index.py` — Vercel entry that serves the FastAPI ASGI `app` (bundles `backend/**`).
-- `api/requirements.txt` — lean dependency set for the function.
+- `api/index.py` + `api/requirements.txt` — lean serverless entry serving the FastAPI app.
 - `.vercelignore` — keeps the upload small.
-
-You only need to do the steps below — no code changes.
 
 ---
 
@@ -32,53 +28,52 @@ You only need to do the steps below — no code changes.
 1. Create a free account at https://www.mongodb.com/atlas and a free **M0** cluster.
 2. **Database Access** → add a database user (username + password).
 3. **Network Access** → add IP `0.0.0.0/0` (Vercel functions have dynamic IPs).
-4. **Connect** → "Drivers" → copy the connection string, e.g.
+4. **Connect → Drivers** → copy the connection string, e.g.
    `mongodb+srv://USER:PASSWORD@cluster0.xxxx.mongodb.net/?retryWrites=true&w=majority`
    This is your `MONGO_URL`. Pick any `DB_NAME` (e.g. `dontworkhere`).
 
-## Step 2 — Push the repo to GitHub
+## Step 2 — First deploy (to get your domain)
 
-```bash
-git push -u origin claude/gracious-pike-2b2e77      # or merge to main and push that
-```
+1. `git push` the repo to GitHub.
+2. https://vercel.com → **Add New… → Project** → import the repo.
+   - **Root Directory:** repo root · **Framework Preset:** *Other* (the `vercel.json` drives it).
+3. Add the database env vars (Settings → Environment Variables): `MONGO_URL`, `DB_NAME`,
+   and `PUBLIC_BASE_URL` (set to the URL Vercel gives you, e.g. `https://your-app.vercel.app`).
+4. **Deploy.** The public site works immediately; moderator login is wired up in Step 3.
 
-## Step 3 — Import into Vercel
+## Step 3 — Google OAuth credentials (moderator sign-in)
 
-1. https://vercel.com → **Add New… → Project** → import the GitHub repo.
-2. **Root Directory:** repo root (leave as-is — `vercel.json` lives here).
-3. **Framework Preset:** *Other* (the `vercel.json` drives the build).
-4. Leave Build/Output settings empty — `vercel.json` provides them.
-
-## Step 4 — Environment variables
-
-In the Vercel project → **Settings → Environment Variables**, add (Production + Preview):
+1. https://console.cloud.google.com → create/select a project.
+2. **APIs & Services → OAuth consent screen** → External → fill app name + your email →
+   add yourself under **Test users** (or Publish the app when ready).
+3. **APIs & Services → Credentials → Create Credentials → OAuth client ID** → *Web application*.
+   - **Authorized redirect URI:** `https://your-app.vercel.app/api/auth/google/callback`
+     (use your exact production domain; add your custom domain here too once you have one).
+4. Copy the **Client ID** and **Client secret**.
+5. In Vercel, add env vars and **redeploy**:
 
 | Variable | Value |
 |---|---|
 | `MONGO_URL` | your Atlas connection string |
 | `DB_NAME` | `dontworkhere` |
-| `PUBLIC_BASE_URL` | `https://your-app.vercel.app` (set after you know the domain) |
-| `RESEND_API_KEY` *(optional)* | a Resend key, to actually send submitter emails |
+| `PUBLIC_BASE_URL` | `https://your-app.vercel.app` (must match the OAuth redirect domain) |
+| `GOOGLE_CLIENT_ID` | from Step 3 |
+| `GOOGLE_CLIENT_SECRET` | from Step 3 |
+| `RESEND_API_KEY` *(optional)* | to actually send submitter emails |
 | `EMAIL_FROM` *(optional)* | e.g. `dontworkhere <noreply@yourdomain>` |
 
-Do **not** set `REACT_APP_BACKEND_URL` — leaving it unset makes the frontend call the
-same-origin `/api`. Do **not** set `CORS_ORIGINS` — same-origin needs no CORS.
+Do **not** set `REACT_APP_BACKEND_URL` or `CORS_ORIGINS` (same-origin needs neither). Do **not**
+set `COOKIE_SECURE` in production (it defaults to secure cookies over HTTPS).
 
-## Step 5 — Deploy
+## Step 4 — Seed data + make yourself a moderator
 
-Click **Deploy**. Vercel builds the frontend and the Python function. When it finishes,
-note the domain and update `PUBLIC_BASE_URL` to match, then redeploy.
-
-## Step 6 — Seed data + make yourself a moderator
-
-Run these locally, pointed at Atlas (one-time):
+Run locally, pointed at Atlas (one-time):
 
 ```bash
-# sample entries
 cd backend
 MONGO_URL="<your-atlas-url>" DB_NAME="dontworkhere" ./.venv/bin/python seed.py
 
-# register your moderator account (there is no separate "admin" role — moderators are admins)
+# Register your moderator account (no separate "admin" role — moderators are admins):
 mongosh "<your-atlas-url>" --eval '
   db.getSiblingDB("dontworkhere").moderators.updateOne(
     { email: "virajwork8@gmail.com" },
@@ -87,48 +82,50 @@ mongosh "<your-atlas-url>" --eval '
     { upsert: true })'
 ```
 
-(Alternatively: skip the moderator command and just be the **first** person to log in at
-`/mod/login` — the first-ever Google login auto-becomes the founding moderator.)
+(Or skip the second command and just be the **first** to sign in at `/mod/login` — the first
+Google login bootstraps the founding moderator.)
 
-## Step 7 — Verify
+## Step 5 — Verify
 
-- `https://your-app.vercel.app` loads, shows seeded entries, search/sort/tags work.
-- `https://your-app.vercel.app/api/` returns `{"message":"dontworkhere API"}`.
-- `https://your-app.vercel.app/sitemap.xml` returns XML.
-- An entry's `…/api/entries/<slug>/og.png` returns a PNG.
-- **Moderator login:** go to `/mod/login` → Continue with Google → sign in as
-  `virajwork8@gmail.com` → you land on `/mod/dashboard`. ⚠️ See the OAuth note below.
+- `https://your-app.vercel.app` loads with seeded entries; search / sort / tags work.
+- `https://your-app.vercel.app/api/` → `{"message":"dontworkhere API"}`; `/sitemap.xml` → XML.
+- An entry's `…/api/entries/<slug>/og.png` → a PNG.
+- **Moderator login:** `/mod/login` → Continue with Google → sign in as `virajwork8@gmail.com`
+  → you land on `/mod/dashboard`. (A non-moderator account bounces back with an error toast.)
 
 ---
 
 ## Caveats & troubleshooting
 
-- **⚠️ OAuth redirect (verify first):** login redirects to `auth.emergentagent.com` and back
-  to your Vercel origin. This is an Emergent-managed service; it works from arbitrary origins
-  in the app's design. If sign-in fails to return to your domain, Emergent is restricting the
-  redirect — you'd then swap `handleLogin` in `frontend/src/pages/ModLogin.jsx` and
-  `backend/app/auth.py` for your own Google OAuth client. Verify this before relying on it.
-- **Cold starts:** the serverless function sleeps when idle; the first request after idle
-  takes ~1–3s (Mongo connect + import). Fine for this traffic profile.
-- **Motor + serverless:** if you ever see "event loop is closed" errors under load, switch the
-  Mongo client in `backend/app/db.py` to be created lazily per request. Not expected at low traffic.
+- **OAuth redirect mismatch** (`redirect_uri_mismatch`): the URI in Google Console must exactly
+  equal `{PUBLIC_BASE_URL}/api/auth/google/callback`. Preview deployments have different URLs —
+  register them too, or just test login on the production/custom domain.
+- **Consent screen "access blocked":** while the app is in *Testing*, only emails listed under
+  **Test users** can sign in. Add moderators there, or publish the consent screen.
+- **Cold starts:** the function sleeps when idle; the first request after idle takes ~1–3s.
+- **Motor + serverless:** if you ever see "event loop is closed" under load, make the Mongo
+  client in `backend/app/db.py` lazy (per-request). Not expected at low traffic.
 - **OG image fonts:** Vercel's runtime may lack the TrueType fonts `backend/app/og.py` looks
-  for, so images fall back to a plain bitmap font. To make them crisp, commit a `.ttf` into the
-  repo and add its path to `_FONT_CANDIDATES` in `og.py`.
+  for (falls back to a plain bitmap font). Commit a `.ttf` and add its path to `_FONT_CANDIDATES`
+  for crisp images.
 - **Function size:** keep `api/requirements.txt` lean — the full `backend/requirements.txt`
-  (litellm/pandas/etc.) would exceed Vercel's 250 MB unzipped limit. It is `.vercelignore`d.
-- **Atlas connection refused:** confirm Network Access allows `0.0.0.0/0` and the user/password
-  in `MONGO_URL` are URL-encoded.
+  exceeds Vercel's 250 MB limit (it is `.vercelignore`d).
 
 ## Custom domain
 
-Vercel **Settings → Domains** → add your domain. Then update `PUBLIC_BASE_URL` to it and
-redeploy. Because the API is same-origin, nothing else changes.
+Vercel **Settings → Domains** → add your domain. Then **update `PUBLIC_BASE_URL`** to it, add
+`https://yourdomain/api/auth/google/callback` to the Google OAuth redirect URIs, and redeploy.
+
+## Local moderator login
+
+The session cookie is `Secure`, so it won't persist over `http://localhost`. To test the full
+Google flow locally, either run behind HTTPS, or set `COOKIE_SECURE=false` in `backend/.env`
+and a Google OAuth client whose redirect URI points at your local backend. For everyday local
+dev, seed a session + use a `Bearer` token instead (see `auth_testing.md`).
 
 ## Alternative: separate backend host
 
-If you prefer the backend as a always-on server (no cold starts), deploy `backend/` to
-Render/Railway/Fly with start command `uvicorn server:app --host 0.0.0.0 --port $PORT` and
-keep only the frontend on Vercel. You'd then set `REACT_APP_BACKEND_URL` to the backend URL
-and `CORS_ORIGINS` to the Vercel origin — but note cross-origin cookies are blocked by Safari,
-so same-origin (all-on-Vercel) is the more robust default.
+Prefer an always-on backend (no cold starts)? Deploy `backend/` to Render/Railway/Fly
+(`uvicorn server:app --host 0.0.0.0 --port $PORT`) and keep the frontend on Vercel — then set
+`REACT_APP_BACKEND_URL` + `CORS_ORIGINS`. Note cross-origin cookies are blocked by Safari, so
+same-origin (all-on-Vercel) is the more robust default.

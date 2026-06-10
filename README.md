@@ -7,8 +7,8 @@ moderators approve / reject / score before entries go public.
 ## Stack
 
 - **Frontend** — React 19 (CRA + CRACO), react-router 7, Tailwind, framer-motion, sonner.
-- **Backend** — FastAPI (`/api` prefix), Motor / MongoDB. Auth via Emergent-managed Google
-  OAuth (portable — works from any origin) + an httpOnly session cookie (or `Bearer` token).
+- **Backend** — FastAPI (`/api` prefix), Motor / MongoDB. Moderator auth via your own Google
+  OAuth (server-side Authorization Code flow) + an httpOnly session cookie (or `Bearer` token).
 - **Backend package layout** (`backend/app/`): `config`, `db`, `models`, `utils`, `auth`,
   `audit`, `notify`, `og`, `routes_public`, `routes_mod`. `server.py` is the ASGI entrypoint.
 
@@ -49,7 +49,10 @@ see `auth_testing.md`.
 |---|---|---|---|
 | `MONGO_URL` | backend | ✅ | MongoDB connection string (Atlas in prod) |
 | `DB_NAME` | backend | ✅ | Database name |
-| `PUBLIC_BASE_URL` | backend | prod | Public site URL — used in sitemap + email links |
+| `PUBLIC_BASE_URL` | backend | prod | Public site URL — sitemap, email, and OAuth redirect URI |
+| `GOOGLE_CLIENT_ID` | backend | for login | Google OAuth web client ID |
+| `GOOGLE_CLIENT_SECRET` | backend | for login | Google OAuth web client secret |
+| `COOKIE_SECURE` | backend | optional | Defaults true; set `false` only for local http testing |
 | `CORS_ORIGINS` | backend | if cross-origin | Comma-separated origins; not needed when frontend + API are same-origin |
 | `RESEND_API_KEY` / `SENDGRID_API_KEY` | backend | optional | Enables submitter emails (no-op + logged if unset) |
 | `EMAIL_FROM` | backend | optional | From address for emails |

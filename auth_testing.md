@@ -1,7 +1,8 @@
 # Auth-Gated App Testing Playbook (dontworkhere.xyz)
 
-Moderator auth uses Emergent Google OAuth + server session cookie. To test the protected
-dashboard without a real Google login, seed a moderator + session directly in Mongo.
+Moderator auth uses Google OAuth (server-side Authorization Code flow) + a server session
+cookie. To test the protected dashboard without a real Google login, seed a moderator +
+session directly in Mongo.
 
 ## Step 1: Create Test Moderator & Session
 ```
