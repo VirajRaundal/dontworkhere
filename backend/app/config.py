@@ -8,8 +8,10 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
-MONGO_URL = os.environ["MONGO_URL"]
-DB_NAME = os.environ["DB_NAME"]
+# Defaults keep imports safe during a build/trace where env isn't injected yet.
+# Production MUST set MONGO_URL + DB_NAME (e.g. a MongoDB Atlas connection string).
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("DB_NAME", "dontworkhere")
 # Comma-separated allowed origins. In production this MUST be the explicit
 # frontend origin(s) — browsers reject "*" together with credentialed (cookie) requests.
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
