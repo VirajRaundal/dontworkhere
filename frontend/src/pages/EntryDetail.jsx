@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Share2, Calendar } from "lucide-react";
+import { ArrowLeft, ExternalLink, Share2, Calendar, Eye, Flag } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { ogImageUrl } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import FlagScore from "@/components/FlagScore";
+import AppealModal from "@/components/AppealModal";
 
 const fmtDate = (d) => {
   if (!d) return null;
@@ -23,6 +24,7 @@ export default function EntryDetail() {
   const navigate = useNavigate();
   const [entry, setEntry] = useState(null);
   const [status, setStatus] = useState("loading");
+  const [appealOpen, setAppealOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -40,6 +42,32 @@ export default function EntryDetail() {
     })();
     return () => { active = false; };
   }, [slug]);
+
+  // Inject Open Graph / Twitter meta for rich link previews.
+  useEffect(() => {
+    if (!entry) return;
+    const prevTitle = document.title;
+    document.title = `🚩 ${entry.company_name} — dontworkhere`;
+    const desc = `“${entry.quote}” — ${entry.person_name}${entry.person_title ? `, ${entry.person_title}` : ""}`;
+    const img = ogImageUrl(entry.slug);
+    const setMeta = (attr, key, content) => {
+      let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+    setMeta("name", "description", desc);
+    setMeta("property", "og:title", `${entry.company_name} — Red Flag`);
+    setMeta("property", "og:description", desc);
+    setMeta("property", "og:type", "article");
+    setMeta("property", "og:image", img);
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:image", img);
+    return () => { document.title = prevTitle; };
+  }, [entry]);
 
   const share = async () => {
     const url = window.location.href;
@@ -121,10 +149,25 @@ export default function EntryDetail() {
               </blockquote>
             </div>
 
-            {entry.statement_date && (
-              <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-navy/60">
-                <Calendar size={15} /> Said on {fmtDate(entry.statement_date)}
-              </p>
+            <div className="mt-6 flex items-center flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-navy/60">
+              {entry.statement_date && (
+                <span className="flex items-center gap-2">
+                  <Calendar size={15} /> Said on {fmtDate(entry.statement_date)}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5" data-testid="entry-views">
+                <Eye size={15} /> {entry.views || 0} view{entry.views === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            {entry.tags?.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2" data-testid="entry-tags">
+                {entry.tags.map((t) => (
+                  <span key={t} className="rounded-full bg-navy/5 border border-navy/10 px-3 py-1 text-xs font-bold text-navy/60">
+                    {t}
+                  </span>
+                ))}
+              </div>
             )}
 
             {/* SOURCES */}
@@ -149,9 +192,14 @@ export default function EntryDetail() {
             )}
 
             <div className="mt-9 pt-6 border-t border-navy/10 flex items-center justify-between flex-wrap gap-3">
-              <button onClick={share} data-testid="entry-share-btn" className="inline-flex items-center gap-2 rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-cream hover:bg-coral-dark transition-colors">
-                <Share2 size={15} /> Share this flag
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={share} data-testid="entry-share-btn" className="inline-flex items-center gap-2 rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-cream hover:bg-coral-dark transition-colors">
+                  <Share2 size={15} /> Share this flag
+                </button>
+                <button onClick={() => setAppealOpen(true)} data-testid="entry-appeal-btn" className="inline-flex items-center gap-2 rounded-full border border-navy/20 px-5 py-2.5 text-sm font-bold text-navy/70 hover:border-coral hover:text-coral transition-colors">
+                  <Flag size={15} /> Request a correction
+                </button>
+              </div>
               <Link to="/submit" className="text-sm font-bold text-navy/60 hover:text-coral transition-colors" data-testid="entry-report-link">
                 Spotted another? Raise a flag →
               </Link>
@@ -159,6 +207,9 @@ export default function EntryDetail() {
           </div>
         </motion.article>
       </main>
+      {appealOpen && (
+        <AppealModal slug={entry.slug} companyName={entry.company_name} onClose={() => setAppealOpen(false)} />
+      )}
       <Footer />
     </div>
   );

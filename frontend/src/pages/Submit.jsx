@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import TagInput from "@/components/TagInput";
 
 const SOURCE_LABELS = ["Twitter / X", "LinkedIn", "News Article", "Interview", "Podcast", "Archive.org", "Blog", "Other"];
 
@@ -24,6 +25,7 @@ export default function Submit() {
     submitter_email: "",
   });
   const [sources, setSources] = useState([{ label: "Twitter / X", url: "" }]);
+  const [tags, setTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -65,6 +67,7 @@ export default function Submit() {
       await api.post("/submissions", {
         ...form,
         sources: sources.filter((s) => s.url.trim()).map((s) => ({ label: s.label.trim(), url: s.url.trim() })),
+        tags,
       });
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -108,6 +111,7 @@ export default function Submit() {
                   setDone(false);
                   setForm({ company_name: "", company_domain: "", person_name: "", person_title: "", quote: "", statement_date: "", submitter_email: "" });
                   setSources([{ label: "Twitter / X", url: "" }]);
+                  setTags([]);
                 }}
                 data-testid="submit-another-btn"
                 className="rounded-full bg-coral px-6 py-3 font-bold text-cream hover:bg-coral-dark transition-colors"
@@ -144,18 +148,18 @@ export default function Submit() {
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className={labelClass}>Company name <span className="text-coral">*</span></label>
-              <input data-testid="input-company-name" className={fieldClass} value={form.company_name} onChange={(e) => set("company_name", e.target.value)} placeholder="HustleForge Labs" />
+              <input data-testid="input-company-name" className={fieldClass} value={form.company_name} onChange={(e) => set("company_name", e.target.value)} placeholder="Acme Corp" />
             </div>
             <div>
               <label className={labelClass}>Company website / domain</label>
-              <input data-testid="input-company-domain" className={fieldClass} value={form.company_domain} onChange={(e) => set("company_domain", e.target.value)} placeholder="hustleforge.io" />
+              <input data-testid="input-company-domain" className={fieldClass} value={form.company_domain} onChange={(e) => set("company_domain", e.target.value)} placeholder="acme.com" />
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className={labelClass}>Person's name <span className="text-coral">*</span></label>
-              <input data-testid="input-person-name" className={fieldClass} value={form.person_name} onChange={(e) => set("person_name", e.target.value)} placeholder="Brad Vanterpool" />
+              <input data-testid="input-person-name" className={fieldClass} value={form.person_name} onChange={(e) => set("person_name", e.target.value)} placeholder="John Doe" />
             </div>
             <div>
               <label className={labelClass}>Title / role</label>
@@ -170,7 +174,7 @@ export default function Submit() {
               className={`${fieldClass} min-h-[120px] resize-y`}
               value={form.quote}
               onChange={(e) => set("quote", e.target.value)}
-              placeholder="“Sleep is a competitor…”"
+              placeholder="“e.g. ‘If you can leave at 5, you're not committed enough.’”"
             />
             <p className={`text-xs mt-1.5 font-medium ${form.quote.trim().length >= 20 ? "text-cream/40" : "text-coral"}`}>
               {form.quote.trim().length}/20 characters minimum
@@ -222,6 +226,12 @@ export default function Submit() {
             >
               <Plus size={16} /> Add Another Source
             </button>
+          </div>
+
+          {/* TAGS */}
+          <div>
+            <label className={labelClass}>Tags <span className="font-normal text-cream/40">(optional — help people filter)</span></label>
+            <TagInput value={tags} onChange={setTags} testid="submit-tags" />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-5">

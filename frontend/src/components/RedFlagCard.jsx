@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Eye } from "lucide-react";
 import CompanyLogo from "@/components/CompanyLogo";
 import FlagScore from "@/components/FlagScore";
 
@@ -49,12 +50,28 @@ export const RedFlagCard = ({ entry, index = 0 }) => {
             </p>
           </div>
 
+          {/* tags */}
+          {entry.tags?.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5" data-testid={`card-tags-${entry.slug}`}>
+              {entry.tags.slice(0, 3).map((t) => (
+                <span key={t} className="rounded-full bg-navy/5 border border-navy/10 px-2.5 py-0.5 text-[11px] font-bold text-navy/60">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* footer */}
-          <div className="mt-6 flex items-center justify-between border-t border-navy/10 pt-4">
+          <div className="mt-5 flex items-center justify-between border-t border-navy/10 pt-4">
             <FlagScore score={entry.red_flag_score} size="text-base" />
-            <span className="text-xs font-semibold text-navy/50">
-              {fmtDate(entry.statement_date) || "—"}
-            </span>
+            <div className="flex items-center gap-3 text-xs font-semibold text-navy/50">
+              {entry.views > 0 && (
+                <span className="inline-flex items-center gap-1" title={`${entry.views} views`}>
+                  <Eye size={13} /> {entry.views}
+                </span>
+              )}
+              <span>{fmtDate(entry.statement_date) || "—"}</span>
+            </div>
           </div>
         </div>
       </Link>

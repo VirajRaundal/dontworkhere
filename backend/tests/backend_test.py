@@ -243,3 +243,107 @@ class TestModeratorManagement:
         r2 = requests.get(f"{API}/mod/moderators", headers=AUTH, timeout=15)
         active = [m["email"] for m in r2.json()["items"] if m.get("active", True)]
         assert self.TEST_EMAIL not in active
+
+    def test_unknown_moderator_delete_404(self):
+        r = requests.delete(
+            f"{API}/mod/moderators/ghost_{int(time.time())}@example.com", headers=AUTH, timeout=15
+        )
+        assert r.status_code == 404
+
+    def test_reactivate_returns_flag(self):
+        email = "reactivate_test@example.com"
+        requests.delete(f"{API}/mod/moderators/{email}", headers=AUTH, timeout=15)
+        r1 = requests.post(f"{API}/mod/moderators", json={"email": email}, headers=AUTH, timeout=15)
+        assert r1.status_code == 200 and r1.json().get("reactivated") is False
+        requests.delete(f"{API}/mod/moderators/{email}", headers=AUTH, timeout=15)
+        r2 = requests.post(f"{API}/mod/moderators", json={"email": email}, headers=AUTH, timeout=15)
+        assert r2.status_code == 200 and r2.json().get("reactivated") is True
+        requests.delete(f"{API}/mod/moderators/{email}", headers=AUTH, timeout=15)  # cleanup
+
+
+# ----------------- Browse extras: sort / tags / views / og / sitemap -----------------
+class TestBrowseExtras:
+    def test_sort_highest_is_descending(self):
+        r = requests.get(f"{API}/entries", params={"sort": "highest", "limit": 9}, timeout=15)
+        assert r.status_code == 200
+        scores = [i["red_flag_score"] for i in r.json()["items"]]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_tags_listing_and_filter(self):
+        tags = requests.get(f"{API}/tags", timeout=15).json()["items"]
+        assert tags, "expected at least one tag from seeded data"
+        tag, count = tags[0]["tag"], tags[0]["count"]
+        r = requests.get(f"{API}/entries", params={"tag": tag}, timeout=15)
+        assert r.status_code == 200
+        assert r.json()["total"] == count
+        for it in r.json()["items"]:
+            assert tag in it.get("tags", [])
+
+    def test_tags_respect_search(self):
+        # A search that matches no entry yields no tag facets.
+        empty = requests.get(f"{API}/tags", params={"search": "zzzqqq_nomatch_xyz"}, timeout=15).json()["items"]
+        assert empty == []
+        # A search that matches some entries yields only that subset's tags, with
+        # counts no larger than the global counts.
+        global_counts = {t["tag"]: t["count"] for t in requests.get(f"{API}/tags", timeout=15).json()["items"]}
+        scoped = requests.get(f"{API}/tags", params={"search": "sleep"}, timeout=15).json()["items"]
+        assert scoped, "expected tags for entries matching 'sleep'"
+        for t in scoped:
+            assert t["count"] <= global_counts.get(t["tag"], 0)
+
+    def test_view_count_increments(self):
+        slug = requests.get(f"{API}/entries", timeout=15).json()["items"][0]["slug"]
+        v1 = requests.get(f"{API}/entries/{slug}", timeout=15).json()["views"]
+        v2 = requests.get(f"{API}/entries/{slug}", timeout=15).json()["views"]
+        assert v2 == v1 + 1
+
+    def test_og_image_is_png(self):
+        slug = requests.get(f"{API}/entries", timeout=15).json()["items"][0]["slug"]
+        r = requests.get(f"{API}/entries/{slug}/og.png", timeout=15)
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "image/png"
+        assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_sitemap_xml(self):
+        r = requests.get(f"{BASE_URL}/sitemap.xml", timeout=15)
+        assert r.status_code == 200 and "urlset" in r.text
+        assert requests.get(f"{API}/sitemap.xml", timeout=15).status_code == 200
+
+
+# ----------------- Appeals + Audit log -----------------
+class TestAppealsAndAudit:
+    def test_appeal_surfaces_to_moderator(self):
+        slug = requests.get(f"{API}/entries", timeout=15).json()["items"][0]["slug"]
+        r = requests.post(
+            f"{API}/entries/{slug}/appeal",
+            json={"message": "TEST appeal — missing important context here", "email": "x@example.com"},
+            timeout=15,
+        )
+        assert r.status_code == 200
+        lst = requests.get(f"{API}/mod/appeals", headers=AUTH, timeout=15)
+        assert lst.status_code == 200
+        assert any(a["slug"] == slug and a["message"].startswith("TEST appeal") for a in lst.json()["items"])
+
+    def test_appeal_short_message_422(self):
+        slug = requests.get(f"{API}/entries", timeout=15).json()["items"][0]["slug"]
+        r = requests.post(f"{API}/entries/{slug}/appeal", json={"message": "short"}, timeout=15)
+        assert r.status_code == 422
+
+    def test_audit_records_approve_with_actor(self):
+        payload = {
+            "company_name": "TEST_Audit",
+            "person_name": "TEST Auditor",
+            "quote": "Auditing every keystroke builds a culture of glorious trust.",
+            "sources": [{"label": "Memo", "url": "https://example.com/audit-memo"}],
+            "tags": ["TEST_Tag"],
+        }
+        eid = requests.post(f"{API}/submissions", json=payload, timeout=15).json()["id"]
+        requests.post(f"{API}/mod/entries/{eid}/approve", json={"red_flag_score": 2}, headers=AUTH, timeout=15)
+
+        audit = requests.get(f"{API}/mod/audit", headers=AUTH, timeout=15).json()["items"]
+        match = [x for x in audit if x["action"] == "approve" and x["target_id"] == eid]
+        assert match, "approve action should be in the audit log"
+        assert match[0]["actor"] == "qa.mod@example.com"
+
+        # cleanup: remove from public listing
+        requests.post(f"{API}/mod/entries/{eid}/reject", json={"rejection_reason": "test cleanup"}, headers=AUTH, timeout=15)

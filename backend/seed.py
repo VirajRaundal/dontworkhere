@@ -32,6 +32,7 @@ SAMPLES = [
         "quote": "Sleep is a competitor. If you're sleeping eight hours, your rival who sleeps four is already eating your lunch.",
         "statement_date": "2023-09-14", "red_flag_score": 5,
         "sources": [{"label": "Podcast", "url": "https://example.com/hustleforge-podcast"}, {"label": "Twitter", "url": "https://twitter.com/example/status/1"}],
+        "tags": ["Hustle Culture", "Anti-Sleep"],
     },
     {
         "company_name": "FamFirst Dynamics", "company_domain": "famfirst.co",
@@ -39,6 +40,7 @@ SAMPLES = [
         "quote": "We're not coworkers here, we're family. And family doesn't ask about overtime pay on a Sunday.",
         "statement_date": "2024-02-02", "red_flag_score": 4,
         "sources": [{"label": "LinkedIn", "url": "https://linkedin.com/posts/example"}],
+        "tags": ["Fake Family", "Unpaid Overtime"],
     },
     {
         "company_name": "GrindCore Capital", "company_domain": "grindcore.fund",
@@ -46,6 +48,7 @@ SAMPLES = [
         "quote": "You need to bleed for this company. If your job isn't costing you your marriage, you're not committed enough.",
         "statement_date": "2022-11-30", "red_flag_score": 5,
         "sources": [{"label": "Interview", "url": "https://example.com/grindcore-interview"}, {"label": "Archive.org", "url": "https://web.archive.org/example"}],
+        "tags": ["Hustle Culture", "Work Over Family"],
     },
     {
         "company_name": "Velocity Synergy", "company_domain": "velocitysynergy.com",
@@ -53,6 +56,7 @@ SAMPLES = [
         "quote": "Work-life balance is a myth invented by people who don't want to win. Here, work IS the life.",
         "statement_date": "2023-06-21", "red_flag_score": 4,
         "sources": [{"label": "News Article", "url": "https://example.com/velocity-news"}],
+        "tags": ["Anti-Work-Life-Balance"],
     },
     {
         "company_name": "NeverSleep AI", "company_domain": "neversleep.ai",
@@ -60,6 +64,7 @@ SAMPLES = [
         "quote": "We expect 996 minimum. If you want to change the world, weekends are a luxury you haven't earned yet.",
         "statement_date": "2024-04-18", "red_flag_score": 5,
         "sources": [{"label": "Blog", "url": "https://example.com/neversleep-blog"}, {"label": "Twitter", "url": "https://twitter.com/example/status/2"}],
+        "tags": ["996", "Hustle Culture"],
     },
     {
         "company_name": "Apex Grindhouse", "company_domain": "apexgrindhouse.com",
@@ -67,6 +72,7 @@ SAMPLES = [
         "quote": "I don't believe in burnout. Burnout is just a story weak people tell themselves to justify quitting.",
         "statement_date": "2023-01-09", "red_flag_score": 4,
         "sources": [{"label": "Conference Talk", "url": "https://example.com/apex-talk"}],
+        "tags": ["Burnout Denial"],
     },
     {
         "company_name": "Quantum Hustle Co", "company_domain": "quantumhustle.co",
@@ -74,6 +80,7 @@ SAMPLES = [
         "quote": "If you can see your kids more than twice a week, you're stealing time from your true mission here.",
         "statement_date": "2022-08-12", "red_flag_score": 5,
         "sources": [{"label": "Memo", "url": "https://example.com/quantum-memo"}],
+        "tags": ["Work Over Family"],
     },
     {
         "company_name": "Maximal Output Inc", "company_domain": "maximaloutput.com",
@@ -81,6 +88,7 @@ SAMPLES = [
         "quote": "Vacation requests are basically a resignation letter you haven't finished writing yet.",
         "statement_date": "2024-01-25", "red_flag_score": 3,
         "sources": [{"label": "Slack Leak", "url": "https://example.com/maximal-slack"}, {"label": "News Article", "url": "https://example.com/maximal-news"}],
+        "tags": ["Anti-Vacation"],
     },
 ]
 
@@ -102,11 +110,13 @@ async def main():
             "quote": s["quote"],
             "statement_date": s["statement_date"],
             "sources": s["sources"],
+            "tags": s.get("tags", []),
             "submitter_email": "",
             "status": "approved",
             "red_flag_score": s["red_flag_score"],
             "slug": slug,
             "rejection_reason": None,
+            "views": 0,
             "created_at": now,
             "approved_at": now,
         }

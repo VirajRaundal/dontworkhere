@@ -10,13 +10,12 @@ export const Footer = () => {
           <div>
             <Logo size="text-xl" />
             <p className="mt-3 text-sm text-cream/50 max-w-md">
-              A community accountability directory. Where The Onion and LinkedIn had a baby.
+              A community-powered accountability directory.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-cream/70">
             <Link to="/" className="hover:text-coral transition-colors" data-testid="footer-directory">Directory</Link>
             <Link to="/submit" className="hover:text-coral transition-colors" data-testid="footer-submit">Raise a Flag</Link>
-            <Link to="/mod/login" className="hover:text-coral transition-colors" data-testid="footer-mod">Moderators</Link>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-cream/10 text-xs text-cream/40">

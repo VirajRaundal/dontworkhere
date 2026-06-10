@@ -26,6 +26,9 @@ export default function Home() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [sort, setSort] = useState("newest");
+  const [activeTag, setActiveTag] = useState("");
+  const [tags, setTags] = useState([]);
   const sentinelRef = useRef(null);
 
   // debounce search input
@@ -34,19 +37,37 @@ export default function Home() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const fetchPage = useCallback(async (skip, q, replace) => {
-    const res = await api.get("/entries", { params: { search: q || undefined, skip, limit: PAGE } });
-    setTotal(res.data.total);
-    setItems((prev) => (replace ? res.data.items : [...prev, ...res.data.items]));
-  }, []);
+  // tags for the filter chips — counts track the current search
+  useEffect(() => {
+    api.get("/tags", { params: { search: debounced || undefined } })
+      .then((r) => setTags(r.data.items))
+      .catch(() => {});
+  }, [debounced]);
 
-  // load / reload on search change
+  const queryParams = useCallback(
+    (skip) => ({
+      search: debounced || undefined,
+      tag: activeTag || undefined,
+      sort,
+      skip,
+      limit: PAGE,
+    }),
+    [debounced, activeTag, sort]
+  );
+
+  const fetchPage = useCallback(async (skip) => {
+    const res = await api.get("/entries", { params: queryParams(skip) });
+    setTotal(res.data.total);
+    setItems((prev) => [...prev, ...res.data.items]);
+  }, [queryParams]);
+
+  // load / reload when search, tag, or sort changes
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       try {
-        const res = await api.get("/entries", { params: { search: debounced || undefined, skip: 0, limit: PAGE } });
+        const res = await api.get("/entries", { params: queryParams(0) });
         if (!active) return;
         setTotal(res.data.total);
         setItems(res.data.items);
@@ -55,7 +76,7 @@ export default function Home() {
       }
     })();
     return () => { active = false; };
-  }, [debounced]);
+  }, [queryParams]);
 
   // infinite scroll
   useEffect(() => {
@@ -65,7 +86,7 @@ export default function Home() {
       if (entries[0].isIntersecting && !loadingMore && !loading && items.length < total) {
         setLoadingMore(true);
         try {
-          await fetchPage(items.length, debounced, false);
+          await fetchPage(items.length);
         } finally {
           setLoadingMore(false);
         }
@@ -73,7 +94,7 @@ export default function Home() {
     }, { rootMargin: "300px" });
     obs.observe(node);
     return () => obs.disconnect();
-  }, [items.length, total, loadingMore, loading, debounced, fetchPage]);
+  }, [items.length, total, loadingMore, loading, fetchPage]);
 
   return (
     <div className="App min-h-screen">
@@ -157,12 +178,53 @@ export default function Home() {
       </header>
 
       {/* DIRECTORY */}
-      <main className="max-w-7xl mx-auto px-5 sm:px-8 pb-24">
-        <div className="flex items-end justify-between mb-8">
+      <main className="max-w-7xl mx-auto px-5 sm:px-8 pt-6 sm:pt-10 pb-24">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-cream">
             {debounced ? `Results for “${debounced}”` : "The Wall of Red Flags"}
           </h2>
+          <label className="flex items-center gap-2 text-sm text-cream/60 font-semibold">
+            Sort
+            <select
+              data-testid="sort-select"
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-navy/40 border border-cream/15 text-cream rounded-full px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-coral"
+            >
+              <option value="newest" className="bg-navy">Newest</option>
+              <option value="highest" className="bg-navy">Highest score</option>
+              <option value="most_viewed" className="bg-navy">Most viewed</option>
+              <option value="oldest" className="bg-navy">Oldest</option>
+            </select>
+          </label>
         </div>
+
+        {/* tag filter chips */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8" data-testid="tag-filters">
+            <button
+              onClick={() => setActiveTag("")}
+              data-testid="tag-filter-all"
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold border transition-colors ${
+                activeTag === "" ? "bg-coral border-coral text-cream" : "border-cream/20 text-cream/60 hover:text-cream hover:border-cream/40"
+              }`}
+            >
+              All
+            </button>
+            {tags.map((t) => (
+              <button
+                key={t.tag}
+                onClick={() => setActiveTag((cur) => (cur === t.tag ? "" : t.tag))}
+                data-testid={`tag-filter-${t.tag}`}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold border transition-colors ${
+                  activeTag === t.tag ? "bg-coral border-coral text-cream" : "border-cream/20 text-cream/60 hover:text-cream hover:border-cream/40"
+                }`}
+              >
+                {t.tag} <span className="opacity-60">{t.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">

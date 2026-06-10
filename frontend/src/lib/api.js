@@ -10,6 +10,9 @@ const api = axios.create({
 
 export default api;
 
+// Absolute URL to the server-rendered Open Graph share image for an entry.
+export const ogImageUrl = (slug) => (slug ? `${API}/entries/${slug}/og.png` : null);
+
 // Build a Clearbit logo URL from a domain.
 export const clearbitLogo = (domain) => {
   if (!domain) return null;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X } from "lucide-react";
+import TagInput from "@/components/TagInput";
 
 const fieldClass =
   "w-full bg-navy/40 border border-cream/15 text-cream placeholder:text-cream/35 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coral focus:border-coral transition-all";
@@ -19,6 +20,7 @@ export default function EntryEditorModal({ entry, approveMode, onClose, onSave, 
     statement_date: "",
   });
   const [sources, setSources] = useState([]);
+  const [tags, setTags] = useState([]);
   const [score, setScore] = useState(3);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function EntryEditorModal({ entry, approveMode, onClose, onSave, 
       statement_date: entry.statement_date || "",
     });
     setSources(entry.sources?.length ? entry.sources.map((s) => ({ ...s })) : [{ label: "Twitter / X", url: "" }]);
+    setTags(entry.tags || []);
     setScore(entry.red_flag_score || 3);
   }, [entry]);
 
@@ -44,6 +47,7 @@ export default function EntryEditorModal({ entry, approveMode, onClose, onSave, 
     const payload = {
       ...form,
       sources: sources.filter((s) => s.url.trim()).map((s) => ({ label: s.label.trim(), url: s.url.trim() })),
+      tags,
       red_flag_score: score,
     };
     onSave(payload);
@@ -128,6 +132,11 @@ export default function EntryEditorModal({ entry, approveMode, onClose, onSave, 
             <button type="button" onClick={addSource} className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-coral hover:text-coral-dark" data-testid="editor-add-source">
               <Plus size={14} /> Add source
             </button>
+          </div>
+
+          <div>
+            <label className={labelClass}>Tags</label>
+            <TagInput value={tags} onChange={setTags} testid="editor-tags" />
           </div>
         </div>
 

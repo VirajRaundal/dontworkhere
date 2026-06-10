@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Check, Ban, Pencil, EyeOff, Trash2, UserPlus, Mail } from "lucide-react";
+import { LogOut, ExternalLink, Check, Ban, Pencil, EyeOff, Trash2, UserPlus, Mail, Flag, History, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
 import Logo from "@/components/Logo";
 import FlagScore from "@/components/FlagScore";
@@ -13,7 +13,9 @@ const TABS = [
   { key: "pending", label: "Pending Queue" },
   { key: "approved", label: "Live Entries" },
   { key: "rejected", label: "Rejected" },
+  { key: "appeals", label: "Appeals" },
   { key: "moderators", label: "Moderators" },
+  { key: "activity", label: "Activity Log" },
 ];
 
 const StatCard = ({ label, value, accent, testid }) => (
@@ -29,10 +31,22 @@ const fmt = (d) => {
   catch { return d; }
 };
 
+const fmtDateTime = (d) => {
+  if (!d) return "—";
+  try { return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+  catch { return d; }
+};
+
+const ACTION_LABELS = {
+  approve: "approved", reject: "rejected", unpublish: "unpublished", edit: "edited",
+  add_moderator: "added moderator", remove_moderator: "removed moderator",
+  reactivate_moderator: "reactivated moderator", resolve_appeal: "resolved appeal",
+};
+
 export default function ModDashboard() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState("pending");
-  const [stats, setStats] = useState({ live: 0, pending: 0, total: 0, rejected: 0 });
+  const [stats, setStats] = useState({ live: 0, pending: 0, total: 0, rejected: 0, appeals: 0 });
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // {entry, approveMode}
@@ -41,6 +55,8 @@ export default function ModDashboard() {
   const [mods, setMods] = useState([]);
   const [meEmail, setMeEmail] = useState("");
   const [newMod, setNewMod] = useState("");
+  const [appeals, setAppeals] = useState([]);
+  const [audit, setAudit] = useState([]);
 
   const loadStats = useCallback(async () => {
     const res = await api.get("/mod/stats");
@@ -68,16 +84,39 @@ export default function ModDashboard() {
     }
   }, []);
 
+  const loadAppeals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/mod/appeals", { params: { status: "open" } });
+      setAppeals(res.data.items);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/mod/audit", { params: { limit: 100 } });
+      setAudit(res.data.items);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadTab = useCallback((t) => {
+    if (t === "moderators") return loadMods();
+    if (t === "appeals") return loadAppeals();
+    if (t === "activity") return loadAudit();
+    return loadEntries(t);
+  }, [loadMods, loadAppeals, loadAudit, loadEntries]);
+
   useEffect(() => { loadStats(); }, [loadStats]);
-  useEffect(() => {
-    if (tab === "moderators") loadMods();
-    else loadEntries(tab);
-  }, [tab, loadEntries, loadMods]);
+  useEffect(() => { loadTab(tab); }, [tab, loadTab]);
 
   const refresh = async () => {
     await loadStats();
-    if (tab === "moderators") await loadMods();
-    else await loadEntries(tab);
+    await loadTab(tab);
   };
 
   const approve = async (entry, score) => {
@@ -156,6 +195,16 @@ export default function ModDashboard() {
     }
   };
 
+  const resolveAppeal = async (id) => {
+    try {
+      await api.post(`/mod/appeals/${id}/resolve`);
+      toast.success("Appeal resolved");
+      await refresh();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Failed to resolve");
+    }
+  };
+
   return (
     <div className="App min-h-screen">
       {/* top bar */}
@@ -201,6 +250,9 @@ export default function ModDashboard() {
               {t.key === "pending" && stats.pending > 0 && (
                 <span className="ml-2 rounded-full bg-coral text-cream text-xs px-2 py-0.5">{stats.pending}</span>
               )}
+              {t.key === "appeals" && stats.appeals > 0 && (
+                <span className="ml-2 rounded-full bg-coral text-cream text-xs px-2 py-0.5">{stats.appeals}</span>
+              )}
             </button>
           ))}
         </div>
@@ -211,6 +263,10 @@ export default function ModDashboard() {
           </div>
         ) : tab === "moderators" ? (
           <ModeratorsPanel mods={mods} me={meEmail} onAdd={addModerator} newMod={newMod} setNewMod={setNewMod} onRemove={removeModerator} />
+        ) : tab === "appeals" ? (
+          <AppealsPanel appeals={appeals} onResolve={resolveAppeal} />
+        ) : tab === "activity" ? (
+          <ActivityPanel items={audit} />
         ) : entries.length === 0 ? (
           <div className="text-center py-20" data-testid="dash-empty">
             <div className="text-5xl mb-3">{tab === "pending" ? "✅" : "🗂️"}</div>
@@ -358,6 +414,71 @@ function ModeratorsPanel({ mods, me, onAdd, newMod, setNewMod, onRemove }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AppealsPanel({ appeals, onResolve }) {
+  if (!appeals.length) {
+    return (
+      <div className="text-center py-20" data-testid="appeals-empty">
+        <div className="text-5xl mb-3">📭</div>
+        <p className="font-display font-bold text-lg text-cream">No open appeals.</p>
+        <p className="text-cream/60 mt-2 text-sm">Correction requests from the public will show up here.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4 max-w-3xl" data-testid="appeals-list">
+      {appeals.map((a) => (
+        <div key={a.id} className="rounded-xl border border-cream/10 bg-cream/[0.03] p-5" data-testid={`appeal-${a.id}`}>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h3 className="font-display font-extrabold text-cream flex items-center gap-2"><Flag size={15} className="text-coral" /> {a.company_name || "—"}</h3>
+              <p className="text-[11px] text-cream/40 mt-0.5">{fmtDateTime(a.created_at)}{a.email ? ` · ${a.email}` : ""}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {a.slug && (
+                <Link to={`/entry/${a.slug}`} target="_blank" className="inline-flex items-center gap-1.5 rounded-full border border-cream/20 px-4 py-2 text-xs font-bold text-cream/80 hover:border-cream transition-colors">
+                  <ExternalLink size={14} /> View entry
+                </Link>
+              )}
+              <button onClick={() => onResolve(a.id)} data-testid={`resolve-appeal-${a.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-coral px-4 py-2 text-xs font-bold text-cream hover:bg-coral-dark transition-colors">
+                <CheckCircle2 size={14} /> Resolve
+              </button>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-cream/90 leading-snug">{a.message}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ActivityPanel({ items }) {
+  if (!items.length) {
+    return (
+      <div className="text-center py-20" data-testid="activity-empty">
+        <div className="text-5xl mb-3">🗒️</div>
+        <p className="font-display font-bold text-lg text-cream">No activity yet.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="max-w-3xl space-y-1.5" data-testid="activity-list">
+      {items.map((a) => (
+        <div key={a.id} className="flex items-start gap-3 rounded-lg border border-cream/10 bg-cream/[0.03] px-4 py-3" data-testid={`activity-${a.id}`}>
+          <History size={15} className="text-coral mt-0.5 shrink-0" />
+          <p className="text-sm text-cream/90 min-w-0 flex-1">
+            <span className="font-bold">{a.actor}</span> {ACTION_LABELS[a.action] || a.action}
+            {a.meta?.company_name ? <span className="text-cream/60"> · {a.meta.company_name}</span>
+              : a.target_id ? <span className="text-cream/50"> · {a.target_id}</span> : null}
+            {a.meta?.score ? <span className="text-cream/50"> ({a.meta.score}/5)</span> : null}
+            {a.meta?.reason ? <span className="text-cream/50"> — “{a.meta.reason}”</span> : null}
+          </p>
+          <span className="text-[11px] text-cream/40 shrink-0">{fmtDateTime(a.created_at)}</span>
+        </div>
+      ))}
     </div>
   );
 }
