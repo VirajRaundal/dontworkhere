@@ -10,8 +10,9 @@ load_dotenv(ROOT_DIR / ".env")
 
 # Defaults keep imports safe during a build/trace where env isn't injected yet.
 # Production MUST set MONGO_URL + DB_NAME (e.g. a MongoDB Atlas connection string).
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = os.environ.get("DB_NAME", "dontworkhere")
+# .strip() tolerates accidental surrounding quotes/whitespace from the dashboard.
+MONGO_URL = (os.environ.get("MONGO_URL") or "mongodb://localhost:27017").strip().strip('"').strip("'").strip()
+DB_NAME = (os.environ.get("DB_NAME") or "dontworkhere").strip().strip('"').strip("'").strip()
 # Comma-separated allowed origins. In production this MUST be the explicit
 # frontend origin(s) — browsers reject "*" together with credentialed (cookie) requests.
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
