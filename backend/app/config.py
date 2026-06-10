@@ -32,13 +32,14 @@ SESSION_DAYS = 7
 # Public URL of the app — used for sitemap entries, share links, and the OAuth
 # redirect URI. Falls back to the first concrete CORS origin, then localhost.
 _first_origin = next((o for o in CORS_ORIGINS if o and o != "*"), "http://localhost:3000")
-PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", _first_origin).rstrip("/")
+PUBLIC_BASE_URL = (os.environ.get("PUBLIC_BASE_URL") or _first_origin).strip(_JUNK).rstrip("/")
 
 # --- Google OAuth (moderator sign-in) ---
 # Create an OAuth 2.0 Client (type: Web application) in Google Cloud Console and
 # register the redirect URI: {PUBLIC_BASE_URL}/api/auth/google/callback
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+# .strip(_JUNK) tolerates accidental surrounding quotes/whitespace from the dashboard.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip(_JUNK)
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip(_JUNK)
 
 # Session cookie security. Keep true in production (HTTPS). Set COOKIE_SECURE=false
 # only for local http testing (then the cookie uses SameSite=Lax instead of None).
