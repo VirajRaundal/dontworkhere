@@ -1,8 +1,19 @@
 """Environment-driven configuration and constants."""
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Chars to trim from env values: whitespace + straight and smart quotes.
+_JUNK = "\"'“”‘’ \t\r\n"
+
+
+def _clean_mongo_url(raw: str) -> str:
+    """Extract a valid mongodb URI from a possibly-contaminated env value."""
+    raw = (raw or "").strip(_JUNK)
+    m = re.search(r"mongodb(\+srv)?://", raw, re.IGNORECASE)
+    return (raw[m.start():].strip(_JUNK)) if m else ""
 
 # backend/ (parent of this app/ package)
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -10,9 +21,8 @@ load_dotenv(ROOT_DIR / ".env")
 
 # Defaults keep imports safe during a build/trace where env isn't injected yet.
 # Production MUST set MONGO_URL + DB_NAME (e.g. a MongoDB Atlas connection string).
-# .strip() tolerates accidental surrounding quotes/whitespace from the dashboard.
-MONGO_URL = (os.environ.get("MONGO_URL") or "mongodb://localhost:27017").strip().strip('"').strip("'").strip()
-DB_NAME = (os.environ.get("DB_NAME") or "dontworkhere").strip().strip('"').strip("'").strip()
+MONGO_URL = _clean_mongo_url(os.environ.get("MONGO_URL")) or "mongodb://localhost:27017"
+DB_NAME = (os.environ.get("DB_NAME") or "dontworkhere").strip(_JUNK)
 # Comma-separated allowed origins. In production this MUST be the explicit
 # frontend origin(s) — browsers reject "*" together with credentialed (cookie) requests.
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
